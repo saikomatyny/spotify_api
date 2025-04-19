@@ -25,10 +25,7 @@ SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
 
 # TODO:
 
-# get all user's profile data with pfp included
-# use all given endpoints
-
-# make homepage using Jinja (html)
+# make some design for user_profile.html
 
 # Make song player using all given endpoints
 
@@ -48,9 +45,27 @@ def get_user_data():
     if response.status_code != 200:
         return jsonify({"error": "Failed to fetch user/me", "status": response.status_code, "message": response.reason}), response.status_code
 
-    user_info["main"] = jsonify(response.json())
-    # return user_info["main"]
-    return render_template("user_info.html", main=user_info["main"])
+    response_dict = response.json()
+
+    # ["images"][0] -- is for image 300x300
+    # ["images"][1] -- is for image 64x64
+    user_info["height"] = response_dict["images"][0]["height"]
+    user_info["user_pfp"] = response_dict["images"][0]["url"]
+    user_info["width"] = response_dict["images"][0]["width"]
+
+    user_info["display_name"] = response_dict["display_name"]
+
+    user_info["country"] = response_dict["country"]
+
+    user_info["email"] = response_dict["email"]
+
+    user_info["ext_url"] = response_dict["external_urls"]["spotify"]
+
+    user_info["followers"] = response_dict["followers"]["total"]
+
+    user_info["subscription"] = response_dict["product"]
+
+    return render_template("user_info.html", **user_info)
 
 
 @app.route("/get_artist")
@@ -101,7 +116,6 @@ def index():
     except:
         code_verifier = generate_code_verifier()
         code_challenge = generate_code_challenge(code_verifier)
-
         session["code_verifier"] = code_verifier
 
         params = {

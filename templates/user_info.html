@@ -1,14 +1,18 @@
 <!doctype html>
 <html>
-    <h1>{{ user_title_info1 }}</h1>
-    <h3>{{ user_info1 }}</h3>
+    <img
+        src="{{ user_pfp }}"
+        height="{{ height_pfp }}"
+        width="{{ width_pfp }}"
+    />
+    <h2>{{ display_name }}</h2>
 
-    <h1>{{ user_title_info2 }}</h1>
-    <h3>{{ user_info2 }}</h3>
+    <h3>{{ country }}</h3>
 
-    <h1>{{ user_title_info3 }}</h1>
-    <h3>{{ user_info3 }}</h3>
+    <h3>{{ email }}</h3>
 
-    <h1>{{ user_title_info4}}</h1>
-    <h3>{{ user_info4 }}</h3>
+    <a href="{{ ext_url }}">link to spotify profile</a>
+
+    <h3>followers count: {{ followers }}</h3>
+    <h3>subscription type: {{ subscription }}</h3>
 </html>

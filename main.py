@@ -1,10 +1,9 @@
-import json
 import os
 import requests
 import urllib.parse
 from flask import Flask, redirect, request, session, jsonify, render_template, url_for
 from dotenv import load_dotenv
-from time import sleep
+# from time import sleep
 import base64
 import hashlib
 import secrets

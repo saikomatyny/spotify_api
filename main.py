@@ -1,3 +1,4 @@
+import json
 import os
 import requests
 import urllib.parse
@@ -29,6 +30,113 @@ SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
 
 # Make song player using all given endpoints
 
+class UserController:
+    main_route = "/me"
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+class PlayerController:
+    main_route = "/player"
+    get_devices = f"{main_route}/devices"
+    currently_playing = f"{main_route}/currently-playing"
+
+    # TODO:
+    # routes for PUT requests
+
+    recently_played = f"{main_route}/recently-played"
+    queue = f"{main_route}/queue"
+
+@app.route("/player")
+def player():
+
+    player_info = {}
+    player_info["playback_state"] = get_playback_state()
+    player_info["devices"] = get_available_devices()
+    player_info["get_currently_playing_track"] = get_currently_playing_track()
+    player_info["recently_played"] = get_recently_played()
+    player_info["queue"] = get_player_queue()
+
+    # TODO:
+    # Do user's interaction using buttons
+    # and write PUT-requests to this interaction
+    #
+    # Fix invalid token request???
+    # idk how this works but okay
+
+    return jsonify(player_info)
+    # return render_template("player.html", **player_info)
+
+def get_player_queue():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.queue}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
+
+def get_recently_played():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.recently_played}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
+
+def get_currently_playing_track():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.currently_playing}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
+
+def get_playback_state():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.main_route}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
+
+def get_available_devices():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.get_devices}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 @app.route("/get_user_data")
 def get_user_data():
     # user = "x3n5f0ve9qiyj306wtt1qw5oh"
@@ -39,11 +147,11 @@ def get_user_data():
     headers = {
         "Authorization": f"Authorization: {access_token}"
     }
-    url = SPOTIFY_API_BASE_URL + "/me"
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}"
     response = requests.get(url, headers=headers)
-    print(access_token)
+
     if response.status_code != 200:
-        return jsonify({"error": "Failed to fetch user/me", "status": response.status_code, "message": response.reason}), response.status_code
+        return jsonify({"error": f"Failed to fetch user{UserController.main_route}", "status": response.status_code, "message": response.reason}), response.status_code
 
     response_dict = response.json()
 
@@ -54,59 +162,17 @@ def get_user_data():
     user_info["width"] = response_dict["images"][0]["width"]
 
     user_info["display_name"] = response_dict["display_name"]
-
     user_info["country"] = response_dict["country"]
-
     user_info["email"] = response_dict["email"]
-
     user_info["ext_url"] = response_dict["external_urls"]["spotify"]
-
     user_info["followers"] = response_dict["followers"]["total"]
-
     user_info["subscription"] = response_dict["product"]
 
     return render_template("user_info.html", **user_info)
 
 
-@app.route("/get_artist")
-def get_artist():
-    artist = "4Z8W4fKeB5YxbusRsdQVPb"
-
-    access_token = get_access_token()
-    if not access_token:
-        return jsonify({"error": "Could not get access token"}), 400
-
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-    url = SPOTIFY_API_BASE_URL + "/artists" + f"/{artist}"
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        return jsonify({"error": "Failed to fetch artist", "status": response.status_code}), response.status_code
-
-    return jsonify(response.json())
-
-@app.route("/get_playlist")
-def get_playlist():
-    playlist = "1deWsaYD2MuFcgKdnXoeSC"
-
-    access_token = get_access_token()
-    if not access_token:
-        return jsonify({"error": "Could not get access token"}), 400
-
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-    url = SPOTIFY_API_BASE_URL + "/playlists" + f"/{playlist}"
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        return jsonify({"error": "Failed to fetch playlist", "status": response.status_code}), response.status_code
-
-    return jsonify(response.json())
-
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 @app.route("/")
 def index():
@@ -155,6 +221,7 @@ def callback():
     response = requests.post(token_url, data=payload, headers=headers)
     response_data = response.json()
 
+    # below we are getting access token
     access_token = response_data.get("access_token")
     token_type = response_data.get("token_type")
     session["access_token"] = f"{token_type} {access_token}"
@@ -174,7 +241,6 @@ def get_access_token():
         # refresh token if it expired
         return redirect("/")
     return access_token
-
 
 def generate_code_verifier(length=64):
     if not (43 <= length <= 128):

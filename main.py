@@ -16,7 +16,7 @@ app.secret_key = os.urandom(24)
 CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
 CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
-SCOPE = "user-read-private user-read-email"
+SCOPE = "user-read-private user-read-email user-read-playback-state user-read-currently-playing user-read-recently-played"
 
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
@@ -27,7 +27,7 @@ SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1"
 
 # make some design for user_profile.html
 
-# Make song player using all given endpoints
+# (in process) Make song player using all given endpoints
 
 class UserController:
     main_route = "/me"
@@ -37,15 +37,14 @@ class UserController:
 
 
 class PlayerController:
+    # for using all player endpoints i need to have premium, but this is all i can do for now
+
     main_route = "/player"
     get_devices = f"{main_route}/devices"
     currently_playing = f"{main_route}/currently-playing"
-
-    # TODO:
-    # routes for PUT requests
-
     recently_played = f"{main_route}/recently-played"
     queue = f"{main_route}/queue"
+
 
 @app.route("/player")
 def player():
@@ -55,30 +54,12 @@ def player():
     player_info["devices"] = get_available_devices()
     player_info["get_currently_playing_track"] = get_currently_playing_track()
     player_info["recently_played"] = get_recently_played()
-    player_info["queue"] = get_player_queue()
 
     # TODO:
-    # Do user's interaction using buttons
-    # and write PUT-requests to this interaction
-    #
-    # Fix invalid token request???
-    # idk how this works but okay
+    # html page with that shows this data
 
     return jsonify(player_info)
     # return render_template("player.html", **player_info)
-
-def get_player_queue():
-    access_token = get_access_token()
-
-    headers = {
-        "Authorization": access_token
-    }
-
-    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.queue}"
-    response = requests.get(url, headers=headers)
-    devices = response.json()
-
-    return devices
 
 def get_recently_played():
     access_token = get_access_token()
@@ -89,9 +70,11 @@ def get_recently_played():
 
     url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.recently_played}"
     response = requests.get(url, headers=headers)
-    devices = response.json()
+    if response.status_code != 200:
+        return jsonify({"error": "Failed to fetch recently played tracks", "status": response.status_code, "message": response.reason}), response.status_code
+    recently_played = response.json()
 
-    return devices
+    return recently_played
 
 def get_currently_playing_track():
     access_token = get_access_token()
@@ -102,22 +85,31 @@ def get_currently_playing_track():
 
     url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.currently_playing}"
     response = requests.get(url, headers=headers)
-    devices = response.json()
+    if response.status_code == 204:
+        currently_playing = {"status" : 204, "currently_playing" : "There is no currently playing track"}
+    elif response.status_code != 200:
+        return jsonify({"error": "Failed to fetch currently playing track", "status": response.status_code, "message": response.reason}), response.status_code
+    else:
+        currently_playing = response.json()
 
-    return devices
+    return currently_playing
 
 def get_playback_state():
     access_token = get_access_token()
-
     headers = {
         "Authorization": access_token
     }
 
     url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.main_route}"
     response = requests.get(url, headers=headers)
-    devices = response.json()
+    if response.status_code == 204:
+        playback_state = {"status" : 204, "playback_state" : "Playback not available or active"}
+    elif response.status_code != 200:
+        return jsonify({"error": "Failed to fetch playback state", "status": response.status_code, "message": response.reason}), response.status_code
+    else:
+        playback_state = response.json()
 
-    return devices
+    return playback_state
 
 def get_available_devices():
     access_token = get_access_token()
@@ -131,6 +123,7 @@ def get_available_devices():
     devices = response.json()
 
     return devices
+
 
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -186,6 +179,8 @@ def index():
         params = {
             "response_type": "code",
             "client_id": CLIENT_ID,
+            # remake SCOPE logic so it will get an access token that will have just enough requirements to make that one request that it need
+            # or maybe not
             "scope": SCOPE,
             "redirect_uri": REDIRECT_URI,
             "code_challenge_method": "S256",

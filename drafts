@@ -1,0 +1,96 @@
+# some endpoints for Player
+
+class PlayerController:
+    main_route = "/player"
+    get_devices = f"{main_route}/devices"
+    currently_playing = f"{main_route}/currently-playing"
+
+    # TODO:
+    # routes for PUT requests
+
+    recently_played = f"{main_route}/recently-played"
+    queue = f"{main_route}/queue"
+
+
+
+@app.route("/player")
+def player():
+
+
+    player_info = {}
+    player_info["playback_state"] = get_playback_state()
+    player_info["devices"] = get_available_devices()
+    player_info["get_currently_playing_track"] = get_currently_playing_track()
+    player_info["recently_played"] = get_recently_played()
+    player_info["queue"] = get_player_queue()
+
+    # TODO:
+    # Do user's interaction using buttons
+    # and write PUT-requests to this interaction
+
+    return jsonify(player_info)
+    # return render_template("player.html", **player_info)
+
+def get_player_queue():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.queue}"
+    response = requests.get(url, headers=headers)
+    queue = response.json()
+
+    return queue
+
+def get_recently_played():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.recently_played}"
+    response = requests.get(url, headers=headers)
+    recently_played = response.json()
+
+    return recently_played
+
+def get_currently_playing_track():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.currently_playing}"
+    response = requests.get(url, headers=headers)
+    currently_playing = response.json()
+
+    return currently_playing
+
+def get_playback_state():
+    access_token = get_access_token()
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.main_route}"
+    response = requests.get(url, headers=headers)
+    playback_state = response.json()
+
+    return playback_state
+
+def get_available_devices():
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": access_token
+    }
+
+    url = f"{SPOTIFY_API_BASE_URL}{UserController.main_route}{PlayerController.get_devices}"
+    response = requests.get(url, headers=headers)
+    devices = response.json()
+
+    return devices
